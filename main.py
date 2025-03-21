@@ -1,22 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas
-
-url = "https://books.toscrape.com/catalogue/page-51.html"
-
-page = requests.get(url)
+import json
 
 
-soup = BeautifulSoup(page.text,"html.parser")
+current_page = 1
 
-print(soup.title.text.strip())
-
-
-
-cureent_page = 1
+data = []
 
 while(True):
-    url = f"https://books.toscrape.com/catalogue/page-{cureent_page}.html"
+    print(f"currently scrapping page {current_page}")
+    url = f"https://books.toscrape.com/catalogue/page-{current_page}.html"
 
     page = requests.get(url)
 
@@ -29,8 +23,35 @@ while(True):
         all_books = soup.find_all("li",class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
 
         for book in all_books:
+            item = {}
             name = book.find("img")["alt"]
-            print(name)
+            link = f"https://books.toscrape.com/catalogue/{book.find("a")["href"]}"
+            price = book.find("p",class_="price_color").text[2:]
+            stock = book.find("p",class_="instock availability").text.strip()
+            
+            item['Title'] = name
+            item['Link'] = link
+            item['Price'] = price
+            item['Stock'] = stock
+
+            data.append(item)
+
+    current_page += 1
+
+json_data = json.dumps(data, indent=4)
+
+with open("json_data.json","w") as f:
+    f.write(json_data)
+
+df = pandas.DataFrame(data)
+
+df.to_excel("books.xlsx")
+df.to_csv("books.csv")
+
+
+
+
+
     
     
     
